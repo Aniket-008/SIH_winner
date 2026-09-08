@@ -1,0 +1,9 @@
+project_id,project_name,department,district,block,contractor,sanctioned_amount,spent_amount,physical_progress_pct,start_date,planned_end_date,last_updated,status,latitude,longitude
+P-1001,Construction of CC Road Ward 12,Public Works,Pune,Haveli,Shakti Infra,5000000,7600000,42,2025-01-10,2025-12-31,2026-03-15,In Progress,18.5204,73.8567
+P-1002,Construction CC Road Ward 12,Public Works,Pune,Haveli,Shakti Infra,5050000,2500000,38,2025-02-01,2026-01-15,2026-08-20,In Progress,18.5205,73.8568
+P-1003,Renovation of Zilla Parishad School,Education,Nagpur,Nagpur Rural,Vidya Buildcon,2800000,2100000,78,2025-06-01,2026-10-01,2026-08-28,In Progress,21.1458,79.0882
+P-1004,Primary Health Centre Expansion,Health,Nashik,Niphad,Mediline Works,8500000,7200000,31,2025-03-05,2026-07-31,2026-07-01,In Progress,20.0059,73.7900
+P-1005,Drinking Water Pipeline Phase 2,Water Resources,Aurangabad,Paithan,Jal Shakti JV,12000000,11800000,58,2024-04-01,2025-08-30,2025-11-20,In Progress,19.8762,75.3433
+P-1006,River Bridge Approach Road,Public Works,Pune,Mulshi,Shakti Infra,95000000,20000000,14,2025-09-01,2027-03-31,2026-08-30,In Progress,18.5590,73.7850
+P-1007,Anganwadi Centre Completion,Women and Child Development,Solapur,Barshi,Gram Vikas Co,1800000,650000,62,2025-04-15,2026-02-28,2026-06-15,Completed,18.2340,75.6940
+P-1008,Rural Drainage Improvement,Public Works,Pune,Haveli,Shakti Infra,4700000,4800000,86,2025-07-01,2026-09-15,2026-09-01,In Progress,18.5340,73.8670

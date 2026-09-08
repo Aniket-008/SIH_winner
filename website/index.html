@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="JAN-DRISHTI AI: Government project fraud and anomaly early-warning dashboard" />
+    <title>JAN-DRISHTI AI | Government Project Risk Intelligence</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <nav class="nav-shell" aria-label="Main navigation">
+        <div class="brand">
+          <span class="brand-mark">JD</span>
+          <div>
+            <strong>JAN-DRISHTI AI</strong>
+            <small>SIH26102 Fraud & Risk Intelligence</small>
+          </div>
+        </div>
+        <a class="ghost-link" href="#upload-panel">Upload Document</a>
+      </nav>
+
+      <section class="hero-grid">
+        <div class="hero-copy">
+          <p class="eyebrow">AI auditor for government development projects</p>
+          <h1>Detect anomalies, fraud signals, delays, duplicate works and cost overruns early.</h1>
+          <p class="hero-text">
+            Upload CSV/JSON project data and get risk-based alerts with officer-friendly explanations showing exactly why each project is risky.
+          </p>
+          <div class="hero-actions">
+            <a class="primary-button" href="#upload-panel">Start Analysis</a>
+            <button id="loadSampleBtn" class="secondary-button" type="button">Try Sample Data</button>
+          </div>
+        </div>
+        <div class="flow-card" aria-label="JAN-DRISHTI AI workflow">
+          <div class="flow-step">Government Project Data</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">Cleaning & Validation</div>
+          <div class="flow-arrow">↓</div>
+          <div class="ai-core">AI Engine</div>
+          <div class="split-flow">
+            <span>Anomaly Detection</span>
+            <span>Risk Prediction</span>
+          </div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step danger">Fraud/Risk Score + Explanation</div>
+          <div class="flow-arrow">↓</div>
+          <div class="flow-step">Officer Dashboard & Early Warning 🚨</div>
+        </div>
+      </section>
+    </header>
+
+    <main>
+      <section id="upload-panel" class="panel upload-panel">
+        <div class="section-heading">
+          <p class="eyebrow">Document upload</p>
+          <h2>Analyze project data</h2>
+          <p>Supported now: CSV and JSON. Suggested columns are shown below; the engine also understands common aliases.</p>
+        </div>
+
+        <form id="uploadForm" class="upload-box">
+          <input id="fileInput" name="file" type="file" accept=".csv,.json,text/csv,application/json" hidden />
+          <label id="dropZone" class="drop-zone" for="fileInput">
+            <span class="upload-icon">⇪</span>
+            <strong>Drop your project document here</strong>
+            <small>or click to browse CSV/JSON file up to 8 MB</small>
+            <span id="fileName" class="file-name">No file selected</span>
+          </label>
+          <div class="upload-actions">
+            <button class="primary-button" type="submit">Run AI Risk Analysis</button>
+            <button id="resetBtn" class="secondary-button" type="button">Reset</button>
+          </div>
+        </form>
+
+        <div class="column-help">
+          <h3>Recommended input columns</h3>
+          <div class="chips">
+            <span>project_id</span><span>project_name</span><span>department</span><span>district</span><span>block</span>
+            <span>contractor</span><span>sanctioned_amount</span><span>spent_amount</span><span>physical_progress_pct</span>
+            <span>start_date</span><span>planned_end_date</span><span>last_updated</span><span>status</span>
+          </div>
+        </div>
+      </section>
+
+      <section id="statusPanel" class="status-panel" aria-live="polite" hidden></section>
+
+      <section id="dashboard" class="dashboard" hidden>
+        <div class="section-heading dashboard-heading">
+          <div>
+            <p class="eyebrow">Officer dashboard</p>
+            <h2>Early-warning intelligence</h2>
+            <p id="metadataText">Analysis output appears here after upload.</p>
+          </div>
+          <button id="downloadReportBtn" class="secondary-button" type="button">Download JSON Report</button>
+        </div>
+
+        <div id="summaryCards" class="summary-grid" aria-label="Analysis summary cards"></div>
+
+        <div class="dashboard-grid">
+          <article class="panel alerts-panel">
+            <div class="panel-title-row">
+              <h3>Priority alerts</h3>
+              <span class="badge danger-badge">Early warning</span>
+            </div>
+            <div id="alertsList" class="alerts-list"></div>
+          </article>
+
+          <article class="panel chart-panel">
+            <h3>Risk distribution</h3>
+            <div id="riskBars" class="risk-bars"></div>
+          </article>
+        </div>
+
+        <article class="panel table-panel">
+          <div class="panel-title-row">
+            <h3>Project risk register</h3>
+            <input id="tableSearch" class="table-search" type="search" placeholder="Search project, district, department..." />
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>Project</th>
+                  <th>District</th>
+                  <th>Risk</th>
+                  <th>Fraud</th>
+                  <th>Top drivers</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody id="projectTableBody"></tbody>
+            </table>
+          </div>
+        </article>
+      </section>
+    </main>
+
+    <aside id="detailDrawer" class="drawer" aria-hidden="true" aria-label="Project explanation drawer">
+      <div class="drawer-panel">
+        <button id="closeDrawerBtn" class="drawer-close" type="button" aria-label="Close project detail">×</button>
+        <div id="drawerContent"></div>
+      </div>
+    </aside>
+
+    <footer class="footer">
+      <p>Built for SIH26102 • Modular AI engine + document upload UI • JAN-DRISHTI AI</p>
+    </footer>
+
+    <script src="app.js"></script>
+  </body>
+</html>
