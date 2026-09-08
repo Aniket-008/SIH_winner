@@ -1,0 +1,7 @@
+# JAN-DRISHTI AI currently runs on Python standard library only.
+# Future optional upgrades can add packages such as:
+# fastapi
+# uvicorn
+# openpyxl
+# pandas
+# scikit-learn
