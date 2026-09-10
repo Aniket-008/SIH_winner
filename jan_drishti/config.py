@@ -48,7 +48,7 @@ class AppConfig:
     app_name: str = "JAN-DRISHTI AI"
     host: str = os.getenv("JAN_DRISHTI_HOST", "0.0.0.0")
     port: int = int(os.getenv("JAN_DRISHTI_PORT", "8000"))
-    max_upload_mb: int = int(os.getenv("JAN_DRISHTI_MAX_UPLOAD_MB", "8"))
+    max_upload_mb: int = int(os.getenv("JAN_DRISHTI_MAX_UPLOAD_MB", "50"))
     thresholds: RiskThresholds = field(default_factory=RiskThresholds)
 
     @property

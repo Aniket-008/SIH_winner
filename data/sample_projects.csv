@@ -1,9 +1,26 @@
-project_id,project_name,department,district,block,contractor,sanctioned_amount,spent_amount,physical_progress_pct,start_date,planned_end_date,last_updated,status,latitude,longitude
-P-1001,Construction of CC Road Ward 12,Public Works,Pune,Haveli,Shakti Infra,5000000,7600000,42,2025-01-10,2025-12-31,2026-03-15,In Progress,18.5204,73.8567
-P-1002,Construction CC Road Ward 12,Public Works,Pune,Haveli,Shakti Infra,5050000,2500000,38,2025-02-01,2026-01-15,2026-08-20,In Progress,18.5205,73.8568
-P-1003,Renovation of Zilla Parishad School,Education,Nagpur,Nagpur Rural,Vidya Buildcon,2800000,2100000,78,2025-06-01,2026-10-01,2026-08-28,In Progress,21.1458,79.0882
-P-1004,Primary Health Centre Expansion,Health,Nashik,Niphad,Mediline Works,8500000,7200000,31,2025-03-05,2026-07-31,2026-07-01,In Progress,20.0059,73.7900
-P-1005,Drinking Water Pipeline Phase 2,Water Resources,Aurangabad,Paithan,Jal Shakti JV,12000000,11800000,58,2024-04-01,2025-08-30,2025-11-20,In Progress,19.8762,75.3433
-P-1006,River Bridge Approach Road,Public Works,Pune,Mulshi,Shakti Infra,95000000,20000000,14,2025-09-01,2027-03-31,2026-08-30,In Progress,18.5590,73.7850
-P-1007,Anganwadi Centre Completion,Women and Child Development,Solapur,Barshi,Gram Vikas Co,1800000,650000,62,2025-04-15,2026-02-28,2026-06-15,Completed,18.2340,75.6940
-P-1008,Rural Drainage Improvement,Public Works,Pune,Haveli,Shakti Infra,4700000,4800000,86,2025-07-01,2026-09-15,2026-09-01,In Progress,18.5340,73.8670
+project_id,project_name,department,district,block,contractor,sanctioned_amount,spent_amount,physical_progress_pct,start_date,planned_end_date,last_updated,status
+PMKSY-AP-001,Irrigation Canal Extension - Krishna District,Water Resources,Krishna,Nandigama,ABC Infrastructure Ltd,15.5,18.2,78,2022-01-15,2023-12-31,2024-08-20,In Progress
+PMKSY-MH-045,Command Area Development - Solapur,Irrigation Department,Solapur,Barshi,XYZ Constructions,45.8,42.1,65,2021-06-01,2024-03-31,2024-09-01,In Progress
+PMKSY-UP-132,Minor Irrigation Works - Gorakhpur,Agriculture,Gorakhpur,Sahjanwa,PQR Contractors,8.3,8.1,92,2023-03-10,2024-10-15,2024-09-05,In Progress
+PMKSY-GJ-078,Major Irrigation Project - Saurashtra,Water Supply,Rajkot,Gondal,MNO Engineering,125.6,98.4,55,2020-09-01,2024-08-31,2024-03-15,In Progress
+PMKSY-TN-021,Drip Irrigation System - Salem,Agriculture,Salem,Attur,DEF Agro Solutions,12.4,15.8,95,2022-07-01,2024-02-28,2024-08-28,Completed
+PMKSY-RJ-093,Watershed Management - Barmer,Rural Development,Barmer,Pachpadra,GHI Developers,22.7,8.5,35,2023-01-20,2025-12-31,2024-09-03,In Progress
+PMKSY-KA-056,Canal Lining Project - Belgaum,Irrigation,Belgaum,Ramdurg,JKL Infrastructure,35.2,36.8,88,2021-11-10,2024-09-30,2024-08-18,In Progress
+PMKSY-MP-112,Tank Renovation - Bhopal,Water Resources,Bhopal,Berasia,STU Constructions,6.9,7.2,100,2022-04-01,2023-11-30,2024-01-10,Completed
+PMKSY-BH-087,Flood Protection Work - Patna,Disaster Management,Patna,Danapur,VWX Builders,18.5,12.3,42,2023-05-15,2024-04-30,2024-02-10,In Progress
+PMKSY-OD-145,Community Lift Irrigation - Kalahandi,Agriculture,Kalahandi,Bhawanipatna,RST Contractors,14.8,3.2,18,2023-08-01,2025-07-31,2023-11-20,In Progress
+PMKSY-TG-067,Sprinkler System Installation - Warangal,Irrigation,Warangal,Hanamkonda,ABC Infrastructure Ltd,9.7,9.9,85,2022-09-05,2024-08-31,2024-09-02,In Progress
+PMKSY-AS-029,Embankment Strengthening - Jorhat,Water Resources,Jorhat,Teok,UVW Engineering,11.3,5.8,32,2022-12-01,2024-05-31,2024-01-15,In Progress
+PMKSY-PB-041,Tube Well Installation - Ludhiana,Agriculture,Ludhiana,Raikot,YZA Agro Tech,7.5,7.8,98,2023-02-10,2024-06-30,2024-09-01,In Progress
+PMKSY-HR-073,Water Harvesting Structure - Rohtak,Rural Development,Rohtak,Meham,BCD Builders,5.2,6.1,100,2022-06-15,2023-10-31,2023-11-05,Completed
+PMKSY-CG-091,Check Dam Construction - Raipur,Water Resources,Raipur,Abhanpur,EFG Contractors,16.4,19.7,72,2021-10-20,2024-07-31,2024-08-25,In Progress
+PMKSY-JH-108,Pond Deepening - Ranchi,Panchayati Raj,Ranchi,Kanke,HIJ Constructions,4.6,4.9,95,2023-04-01,2024-09-30,2024-08-30,In Progress
+PMKSY-UK-015,Spring Water Conservation - Dehradun,Forest Department,Dehradun,Vikasnagar,KLM Eco Solutions,8.9,3.1,28,2023-06-10,2025-05-31,2023-12-18,In Progress
+PMKSY-HP-023,Mountain Irrigation Channel - Shimla,Irrigation,Shimla,Theog,NOP Builders,13.7,14.2,90,2022-03-20,2024-11-30,2024-08-22,In Progress
+PMKSY-GA-004,Paddy Field Irrigation - South Goa,Agriculture,South Goa,Quepem,QRS Developers,3.8,4.5,100,2022-08-01,2023-12-15,2024-01-05,Completed
+PMKSY-MN-012,Terrace Farming Support - Imphal East,Horticulture,Imphal East,Porompat,TUV Agro Works,5.1,2.8,45,2023-07-01,2025-06-30,2024-03-25,In Progress
+PMKSY-AP-002,Irrigation Canal Extension - Krishna District,Water Resources,Krishna,Nandigama,ABC Infrastructure Ltd,15.5,18.0,76,2022-01-15,2023-12-31,2024-08-15,In Progress
+PMKSY-WB-134,Drainage System Upgrade - Hooghly,Irrigation,Hooghly,Chinsurah,WXY Constructions,19.3,11.7,48,2022-11-01,2024-10-31,2024-05-20,In Progress
+PMKSY-KL-018,Paddy Field Water Management - Alappuzha,Agriculture,Alappuzha,Kuttanad,ZAB Contractors,6.8,7.1,97,2023-01-05,2024-08-15,2024-09-04,In Progress
+PMKSY-TR-007,Hill Irrigation Project - West Tripura,Water Resources,West Tripura,Agartala,CDE Engineering,10.2,4.6,36,2023-09-01,2025-08-31,2024-02-28,In Progress
+PMKSY-MZ-003,Community Water Tank - Aizawl,Rural Development,Aizawl,Darlawn,FGH Builders,7.4,7.6,89,2022-05-10,2024-04-30,2024-08-19,In Progress
