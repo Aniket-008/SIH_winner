@@ -8,6 +8,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <link rel="icon" type="image/svg+xml" href="favicon.svg" />
+    <link rel="shortcut icon" href="favicon.svg" />
+    <link rel="mask-icon" href="favicon.svg" color="#2154d4" />
+    <meta name="theme-color" content="#2154d4" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -16,7 +20,7 @@
       <div class="login-container">
         <div class="login-header">
           <div class="brand-large">
-            <span class="brand-mark-large">JD</span>
+            <span class="brand-mark-large"><img src="favicon.svg" alt="" /></span>
             <div>
               <strong>JAN-DRISHTI AI</strong>
               <small>Government Project Risk Intelligence Platform</small>
@@ -69,7 +73,7 @@
       <header class="hero" id="heroSection" style="display: none;">
         <nav class="nav-shell" aria-label="Main navigation">
           <div class="brand">
-            <span class="brand-mark">JD</span>
+            <span class="brand-mark"><img src="favicon.svg" alt="" /></span>
             <div>
               <strong>JAN-DRISHTI AI</strong>
               <small>SIH26102 Fraud & Risk Intelligence</small>
@@ -77,6 +81,7 @@
           </div>
           <div class="nav-links">
             <a class="ghost-link" href="#upload-panel" id="navUpload">Upload</a>
+            <a class="ghost-link" href="#login-analytics" id="navAnalytics">Login Analytics</a>
             <a class="ghost-link" href="#transparency" id="navTransparency">Model Transparency</a>
             <a class="ghost-link" href="#audit-log" id="navAudit">Audit Log</a>
             <div id="userDisplay" class="user-display">
@@ -119,11 +124,12 @@
       <!-- Compact Navigation Bar (shown after login) -->
       <nav class="compact-nav" id="compactNav">
         <div class="brand">
-          <span class="brand-mark">JD</span>
+          <span class="brand-mark"><img src="favicon.svg" alt="" /></span>
           <strong>JAN-DRISHTI AI</strong>
         </div>
         <div class="nav-links">
           <a class="nav-link" href="#upload-panel">Upload</a>
+          <a class="nav-link" href="#login-analytics" id="navAnalytics2">Login Analytics</a>
           <a class="nav-link" href="#transparency">Model Transparency</a>
           <a class="nav-link" href="#audit-log">Audit Log</a>
           <div id="userDisplay2" class="user-display">
@@ -215,6 +221,82 @@
               </table>
             </div>
           </article>
+        </section>
+
+        <!-- Login & Access Analytics Dashboard -->
+        <section id="login-analytics" class="panel analytics-panel">
+          <div class="section-heading analytics-heading">
+            <div>
+              <p class="eyebrow">Login &amp; access analytics</p>
+              <h2>Who is using the platform</h2>
+              <p>
+                Sign-ins, active users and failed attempts counted from the platform's own audit
+                trail, plus how much analysis work has been done - so an administrator can see
+                adoption and spot credential-stuffing attempts at a glance.
+              </p>
+            </div>
+            <div class="analytics-controls">
+              <span id="analyticsUpdated" class="analytics-updated">Loading&hellip;</span>
+              <label class="analytics-range">
+                Range
+                <select id="analyticsRange">
+                  <option value="7">Last 7 days</option>
+                  <option value="14" selected>Last 14 days</option>
+                  <option value="30">Last 30 days</option>
+                  <option value="90">Last 90 days</option>
+                </select>
+              </label>
+              <button id="analyticsRefreshBtn" class="secondary-button analytics-refresh" type="button">Refresh</button>
+            </div>
+          </div>
+
+          <div id="analyticsSummary" class="summary-grid analytics-summary" aria-label="Login summary"></div>
+
+          <div class="dashboard-grid analytics-grid">
+            <article class="panel chart-panel">
+              <div class="panel-title-row">
+                <h3>Sign-ins per day</h3>
+                <span id="analyticsWindowBadge" class="badge analytics-badge">-</span>
+              </div>
+              <div id="loginBars" class="login-bars"></div>
+              <div class="analytics-legend">
+                <span class="legend-item"><i class="legend-swatch swatch-login"></i>Successful sign-ins</span>
+                <span class="legend-item"><i class="legend-swatch swatch-failed"></i>Failed attempts</span>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-title-row">
+                <h3>Recent sign-in activity</h3>
+                <span class="badge analytics-badge">latest first</span>
+              </div>
+              <div id="recentLogins" class="login-feed"></div>
+            </article>
+          </div>
+
+          <article class="panel">
+            <div class="panel-title-row">
+              <h3>User activity</h3>
+              <span id="analyticsIpNote" class="badge analytics-badge">-</span>
+            </div>
+            <div class="table-wrap">
+              <table class="analytics-table">
+                <thead>
+                  <tr>
+                    <th>User</th>
+                    <th>Role</th>
+                    <th>Sign-ins</th>
+                    <th>Failed attempts</th>
+                    <th>Last login</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="analyticsUsers"></tbody>
+              </table>
+            </div>
+          </article>
+
+          <p id="analyticsNote" class="analytics-note"></p>
         </section>
 
         <!-- Model Transparency Section -->
