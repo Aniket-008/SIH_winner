@@ -26,3 +26,7 @@ uploads/
 # Runtime cluster helpers
 logs/
 *.pid
+
+# UI smoke test dependency (npm install jsdom --no-save)
+node_modules/
+package-lock.json
