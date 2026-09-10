@@ -40,6 +40,39 @@ See [SECURITY.md](docs/SECURITY.md) for complete security documentation.
 - **[Project Blueprint](docs/PROJECT_BLUEPRINT.md)** - System architecture and modules
 - **[Security](docs/SECURITY.md)** - Authentication, authorization, and compliance
 
+## 📊 Login & access analytics
+
+A **Login Analytics** dashboard built into the website answers the operational
+questions with data the platform already stores in its own audit trail - no
+third-party analytics, no extra infrastructure.
+
+Open **Login Analytics** in the navigation after signing in:
+
+| Shown on the dashboard | Meaning |
+| --- | --- |
+| Total sign-ins / today / last 7 days | every successful login, counted live |
+| Unique users active (8h) | people with a session inside the token lifetime |
+| Failed attempts + success rate | wrong password (`LOGIN_FAILED`) or expired token (`AUTH_FAILED`) |
+| Sign-ins per day chart | 7 / 14 / 30 / 90-day range, failed attempts stacked alongside |
+| Recent sign-in activity | latest attempts with outcome, time and (for admins) client IP |
+| User activity table | role, sign-ins, failed attempts, last login, active/idle/never signed in |
+| Platform activity | analyses run, projects screened, uploads today |
+
+Administrators additionally see client IP addresses on failed attempts - useful
+for spotting credential stuffing - while auditors and viewers see aggregates
+only. The platform also ships its own favicon/app icon (`website/favicon.svg`),
+shown in the browser tab, bookmarks and the header brand.
+
+### `GET /api/access-analytics?days=14`
+
+Returns the dashboard payload (logins, failures, users, per-day series, per-user
+table, recent feed, platform activity). Requires `view` permission.
+
+```bash
+curl -H "Authorization: Bearer <token>" \
+  "http://localhost:8000/api/access-analytics?days=14"
+```
+
 ## What is built
 
 - Document-upload website UI with drag-and-drop upload.
@@ -80,7 +113,9 @@ For Arena/live preview environments, the server already binds to `0.0.0.0` and u
    - Risk distribution
    - Project risk register
    - Per-project explanation drawer
-5. Explore **Model Transparency** to see how risk scores are calculated.
+5. Open **Login Analytics** to see sign-ins, active users and failed attempts for
+   the platform itself (sign out and back in to watch the counters move).
+6. Explore **Model Transparency** to see how risk scores are calculated.
 6. Check **Audit Log** (admin only) to see all system activity.
 
 ## Input format
@@ -122,12 +157,14 @@ jan_drishti/
     explanation_engine.py           # Officer-friendly explanations/actions
     report_builder.py               # Dashboard summaries and alerts
     auth.py                         # Authentication & authorization system
+    access_analytics.py             # Login/access analytics for the dashboard
     database.py                     # Secure SQLite database with audit logging
     transparency.py                 # Model transparency documentation
 website/
-  index.html                        # UI with login, dashboard, transparency page
+  index.html                        # UI with login, dashboard, analytics, transparency page
   styles.css                        # UI/UX design system with security features
   app.js                            # Auth, upload, API calls, dashboard rendering
+  favicon.svg                       # Platform app icon (browser tab, bookmarks, header)
 data/
   sample_projects.csv               # Demo dataset with realistic government projects
   jandrishti.db                     # SQLite database (created on first run)
@@ -136,6 +173,8 @@ docs/
   SECURITY.md                       # Complete security documentation
 tests/
   test_engine.py                    # Engine unit tests
+  test_access_analytics.py          # Counting rules + the analytics HTTP endpoint
+  ui_smoke.mjs                      # jsdom UI test for the analytics dashboard
 ```
 
 ## Run tests

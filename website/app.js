@@ -437,6 +437,10 @@ function showMainApp() {
   if (mainApp) mainApp.hidden = false;
   updateUserDisplay();
   loadTransparencyData();
+
+  // Login/access analytics: this is the one load that also counts the sign-in
+  // that just happened, so the officer sees their own session in the numbers.
+  loadAccessAnalytics();
   
   // Auto-load audit log for admins
   if (currentUser && currentUser.role === 'admin') {
@@ -502,6 +506,7 @@ if (logoutBtn2) logoutBtn2.addEventListener("click", handleLogout);
 function handleLogout() {
   authToken = null;
   currentUser = null;
+  analyticsData = null;
   
   // Clear any session data
   localStorage.removeItem("authToken");
@@ -890,3 +895,180 @@ quickActions.addEventListener("click", (e) => {
     }
   }
 });
+
+
+// ==================== Login & Access Analytics ====================
+// Shows how many people are signing in, who is active and whether anyone is
+// failing authentication repeatedly. All numbers come from the platform's own
+// audit trail via /api/access-analytics - nothing is estimated.
+
+const analyticsSummary = document.getElementById("analyticsSummary");
+const loginBars = document.getElementById("loginBars");
+const recentLogins = document.getElementById("recentLogins");
+const analyticsUsers = document.getElementById("analyticsUsers");
+const analyticsUpdated = document.getElementById("analyticsUpdated");
+const analyticsWindowBadge = document.getElementById("analyticsWindowBadge");
+const analyticsIpNote = document.getElementById("analyticsIpNote");
+const analyticsNote = document.getElementById("analyticsNote");
+const analyticsRange = document.getElementById("analyticsRange");
+const analyticsRefreshBtn = document.getElementById("analyticsRefreshBtn");
+
+let analyticsData = null;
+
+async function loadAccessAnalytics(showErrors = false) {
+  if (!authToken) return;
+  const days = analyticsRange ? analyticsRange.value : 14;
+  try {
+    const response = await fetch(`/api/access-analytics?days=${days}`, {
+      headers: { "Authorization": `Bearer ${authToken}` },
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    analyticsData = await response.json();
+    renderAccessAnalytics(analyticsData);
+  } catch (error) {
+    if (showErrors || !analyticsData) {
+      analyticsSummary.innerHTML = `<p class="analytics-error">Could not load login analytics: ${escapeHtml(error.message)}</p>`;
+      if (analyticsUpdated) analyticsUpdated.textContent = "Unavailable";
+    }
+  }
+}
+
+function renderAccessAnalytics(data) {
+  const logins = data.logins;
+  const failures = data.failures;
+  const users = data.users;
+  const activity = data.activity;
+
+  analyticsUpdated.textContent = `Updated ${new Date(data.generated_at).toLocaleTimeString()} · source: audit trail`;
+  analyticsWindowBadge.textContent = `${data.window.from} → ${data.window.to}`;
+
+  const cards = [
+    { label: "Total sign-ins", value: logins.total.toLocaleString(), sub: `${logins.today} today · ${logins.last_7_days} in the last 7 days`, cls: "" },
+    { label: "Unique users active", value: `${users.active_now} / ${users.total}`, sub: `signed in within the last 8 hours · ${users.logged_in_today} today`, cls: users.active_now ? "metric-good" : "" },
+    { label: "Failed attempts", value: failures.total.toLocaleString(), sub: `${failures.today} today · wrong password or expired token`, cls: failures.today ? "metric-warn" : "" },
+    { label: "Sign-in success rate", value: `${(failures.success_rate * 100).toFixed(1)}%`, sub: `${logins.total} successful · ${failures.total} rejected`, cls: failures.success_rate >= 0.9 ? "metric-good" : "metric-bad" },
+    { label: "Never signed in", value: users.never_logged_in.toLocaleString(), sub: `of ${users.total} accounts (${Object.entries(users.by_role).map(([role, n]) => `${n} ${role}`).join(", ")})`, cls: "" },
+    { label: "Analysis activity", value: activity.analyses_run.toLocaleString(), sub: `${activity.projects_screened.toLocaleString()} projects screened · ${activity.analyses_today} upload(s) today`, cls: "" },
+  ];
+
+  analyticsSummary.innerHTML = cards.map(card => `
+    <article class="summary-card">
+      <span>${escapeHtml(card.label)}</span>
+      <strong>${escapeHtml(String(card.value))}</strong>
+      <span class="metric-sub ${card.cls}">${escapeHtml(card.sub)}</span>
+    </article>
+  `).join("");
+
+  renderLoginBars(data.series);
+  renderRecentLogins(data.recent, data.ip_visible);
+  renderAnalyticsUsers(data.user_table);
+
+  const definitions = data.definitions;
+  analyticsNote.innerHTML =
+    `<strong>How these numbers are counted:</strong> a sign-in is recorded every time the login ` +
+    `endpoint succeeds; a failed attempt is a wrong password or an expired token; "users active" means ` +
+    `${escapeHtml(definitions.active_user)}. Use the Login Analytics tab after signing in from a second ` +
+    `browser to watch the counters move.`;
+}
+
+function renderLoginBars(series) {
+  if (!loginBars) return;
+  if (!series.length) {
+    loginBars.innerHTML = `<p class="analytics-note">No sign-in data for this range yet.</p>`;
+    return;
+  }
+  const peak = Math.max(1, ...series.map(point => Math.max(point.logins, point.failed)));
+  loginBars.innerHTML = series.map(point => {
+    const loginHeight = Math.round((point.logins / peak) * 100);
+    const failedHeight = Math.round((point.failed / peak) * 100);
+    return `
+      <div class="login-bar-col" title="${escapeHtml(point.label)}: ${point.logins} sign-in(s), ${point.failed} failed">
+        <div class="login-bar-stack">
+          <div class="login-bar login-bar-failed" style="height:${failedHeight}%"></div>
+          <div class="login-bar login-bar-ok" style="height:${loginHeight}%"></div>
+        </div>
+        <span class="login-bar-value">${point.logins || ""}</span>
+        <span class="login-bar-label">${escapeHtml(point.label.split(" ")[0])}<br />${escapeHtml(point.weekday)}</span>
+      </div>
+    `;
+  }).join("");
+}
+
+function renderRecentLogins(events, ipVisible) {
+  if (!recentLogins) return;
+  if (!events.length) {
+    recentLogins.innerHTML = `<p class="analytics-note">No sign-in attempts recorded yet. Sign out and back in to see this feed fill up.</p>`;
+    return;
+  }
+  recentLogins.innerHTML = events.map(event => `
+    <div class="login-feed-item ${event.success ? "is-ok" : "is-failed"}">
+      <div class="login-feed-head">
+        <strong>${escapeHtml(event.username)}</strong>
+        <span class="login-outcome ${event.success ? "outcome-ok" : "outcome-failed"}">${event.success ? "signed in" : "rejected"}</span>
+      </div>
+      <div class="login-feed-meta">
+        ${escapeHtml(event.time_display)}${event.ip_address ? ` · ${escapeHtml(event.ip_address)}` : ""}
+        ${event.details ? ` · ${escapeHtml(event.details)}` : ""}
+      </div>
+    </div>
+  `).join("");
+  if (analyticsIpNote) {
+    analyticsIpNote.textContent = ipVisible ? "client IPs visible (admin)" : "client IPs hidden for non-admins";
+  }
+}
+
+function renderAnalyticsUsers(rows) {
+  if (!analyticsUsers) return;
+  if (!rows.length) {
+    analyticsUsers.innerHTML = `<tr><td colspan="6">No user accounts found.</td></tr>`;
+    return;
+  }
+  analyticsUsers.innerHTML = rows.map(row => {
+    const status = !row.is_active
+      ? `<span class="status-tag status-disabled">disabled</span>`
+      : row.active_now
+        ? `<span class="status-tag status-active">active now</span>`
+        : row.never_logged_in
+          ? `<span class="status-tag status-idle">never signed in</span>`
+          : `<span class="status-tag status-idle">idle</span>`;
+    return `
+      <tr>
+        <td>
+          <strong>${escapeHtml(row.full_name || row.username)}</strong>
+          <span class="user-handle">${escapeHtml(row.username)}</span>
+        </td>
+        <td><span class="role-tag role-${escapeHtml(row.role)}">${escapeHtml(row.role)}</span></td>
+        <td>${row.logins}</td>
+        <td>${row.failed_attempts ? `<span class="metric-warn">${row.failed_attempts}</span>` : "0"}</td>
+        <td>${escapeHtml(row.last_login_display)}</td>
+        <td>${status}</td>
+      </tr>
+    `;
+  }).join("");
+}
+
+if (analyticsRefreshBtn) {
+  analyticsRefreshBtn.addEventListener("click", () => loadAccessAnalytics(true));
+}
+
+if (analyticsRange) {
+  analyticsRange.addEventListener("change", () => loadAccessAnalytics(true));
+}
+
+const navAnalytics = document.getElementById("navAnalytics");
+if (navAnalytics) {
+  navAnalytics.addEventListener("click", (event) => {
+    event.preventDefault();
+    loadAccessAnalytics(true);
+    document.getElementById("login-analytics").scrollIntoView({ behavior: "smooth" });
+  });
+}
+
+const navAnalyticsCompact = document.getElementById("navAnalytics2");
+if (navAnalyticsCompact) {
+  navAnalyticsCompact.addEventListener("click", (event) => {
+    event.preventDefault();
+    loadAccessAnalytics(true);
+    document.getElementById("login-analytics").scrollIntoView({ behavior: "smooth" });
+  });
+}

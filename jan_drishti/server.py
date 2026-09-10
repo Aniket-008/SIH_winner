@@ -19,6 +19,7 @@ from jan_drishti.engine import analyze_records_json
 from jan_drishti.services.ingestion import IngestionError, load_records
 from jan_drishti.services.auth import AuthManager, AuthenticationError, AuthorizationError
 from jan_drishti.services.database import DatabaseManager
+from jan_drishti.services.access_analytics import AccessAnalytics
 from jan_drishti.services.transparency import get_model_documentation, explain_project_score_breakdown
 from jan_drishti.services.chatbot import JanDrishtiChatbot
 
@@ -30,6 +31,7 @@ DATA_DIR = REPO_ROOT / "data"
 auth_manager = AuthManager()
 db_manager = DatabaseManager()
 chatbot = JanDrishtiChatbot()
+access_analytics = AccessAnalytics(db_manager)
 
 
 class JanDrishtiHandler(BaseHTTPRequestHandler):
@@ -63,6 +65,12 @@ class JanDrishtiHandler(BaseHTTPRequestHandler):
         
         if path.startswith("/api/analysis-history"):
             self._handle_analysis_history()
+            return
+
+        # Login / access analytics dashboard (aggregate counts for every role,
+        # client IPs only for administrators)
+        if path.startswith("/api/access-analytics"):
+            self._handle_access_analytics(parsed)
             return
 
         # Static files
@@ -375,6 +383,42 @@ class JanDrishtiHandler(BaseHTTPRequestHandler):
                 status=HTTPStatus.INTERNAL_SERVER_ERROR
             )
     
+    def _handle_access_analytics(self, parsed) -> None:
+        """Login and access analytics built from the platform's own audit trail.
+
+        Requires ``view`` permission: every signed-in role may see how much the
+        platform is being used. Client IP addresses are withheld unless the
+        viewer is an administrator, matching the audit-log endpoint's model.
+
+        This endpoint deliberately does not write an audit row of its own - the
+        dashboard polls it, and logging each poll would drown the very table it
+        reports on.
+        """
+        user = self._require_auth(permission="view")
+        if not user:
+            return
+
+        try:
+            query = parse_qs(parsed.query)
+            try:
+                days = int(query.get("days", ["14"])[0])
+            except (TypeError, ValueError):
+                days = 14
+
+            is_admin = user.get("role") == "admin"
+            payload = access_analytics.summarize(
+                days=days,
+                recent_limit=15,
+                include_ips=is_admin,
+                user_admin=is_admin,
+            )
+            self._send_json(payload)
+        except Exception as exc:
+            self._send_json(
+                {"error": "Failed to build access analytics", "details": str(exc)},
+                status=HTTPStatus.INTERNAL_SERVER_ERROR,
+            )
+
     def _handle_audit_log(self, parsed) -> None:
         """Handle audit log request (admin only)."""
         user = self._require_auth(permission="manage_users")
