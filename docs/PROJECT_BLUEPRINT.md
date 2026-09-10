@@ -41,6 +41,8 @@ Early Warning 🚨
 | Explanation | `jan_drishti/services/explanation_engine.py` | Converts findings into clear reasons and officer actions |
 | Report | `jan_drishti/services/report_builder.py` | Builds summary metrics and priority alerts for dashboard |
 | UI | `website/index.html`, `website/styles.css`, `website/app.js` | Upload flow, dashboard, explanations and report download |
+| Scalability & traffic control | `jan_drishti/services/scalability.py` | Live telemetry, token-bucket rate limiting, load shedding, cluster aggregation, Prometheus metrics, in-app load generator |
+| Edge tier configs | `deploy/nginx`, `deploy/apache`, `deploy/iis`, `deploy/kubernetes` | Reverse proxy, load balancing, per-client rate limits, caching, autoscaling for the three supported stacks |
 
 ## Current anomaly signals
 
@@ -54,6 +56,21 @@ Early Warning 🚨
 8. **Amount outliers** — budget much higher than uploaded-batch median.
 9. **Contractor concentration** — one contractor controls a large share of count or value.
 10. **Data conflicts** — completion status conflicts with low physical progress, invalid dates or invalid amounts.
+
+## Deployment topology (scaled)
+
+```text
+officer browser
+   -> edge tier      (Nginx / Apache httpd / IIS: TLS, rate limit, static cache)
+   -> load balancer  (upstream pool / balancer:// / ARR farm, health checks)
+   -> app replicas   (stateless: the same Python app, N replicas)
+        -> in-process traffic control (429 rate limit, 503 load shed)
+        -> model pipeline (ingestion -> validation -> anomalies -> risk score -> explanation)
+```
+
+Each replica reports its own metrics to `/api/scalability` and
+`/api/metrics`; the dashboard aggregates the whole fleet. See
+[SCALABILITY.md](SCALABILITY.md) for the operational detail.
 
 ## Suggested hackathon extensions
 

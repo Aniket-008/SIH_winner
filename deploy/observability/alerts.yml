@@ -1,0 +1,103 @@
+# =============================================================================
+#  Alert rules for JAN-DRISHTI AI (loaded by deploy/observability/prometheus.yml)
+#
+#  These are the same signals the in-app Scalability dashboard shows, expressed
+#  as Prometheus alerts so an NOC/SOC team gets paged without opening the app.
+# =============================================================================
+groups:
+  - name: jan_drishti_availability
+    interval: 30s
+    rules:
+      - alert: ReplicaDown
+        expr: up{job="jan_drishti_replicas"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "JAN-DRISHTI replica {{ $labels.instance }} is not scrapable"
+          runbook: |
+            1. curl http://{{ $labels.instance }}/health on the host.
+            2. Check the process log; if it is a crash loop the balancer has
+               already removed it from rotation (check the dashboard replica table).
+            3. Restart: python -m jan_drishti.server --port <port>
+
+      - alert: ReplicaSaturated
+        expr: jan_drishti_requests_in_flight / jan_drishti_max_concurrent > 0.8
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.node }} is above 80% of its concurrency ceiling"
+          description: "Requests will start being shed (HTTP 503) soon. Scale out or raise JAN_DRISHTI_MAX_CONCURRENT."
+
+  - name: jan_drishti_performance
+    rules:
+      - alert: LatencyBudgetBreach
+        # 250 ms = default JAN_DRISHTI_TARGET_P95_MS. If you change the policy in
+        # the dashboard, update this threshold (or scrape the value the policy
+        # exposes as jan_drishti_cluster_p95_ms vs the configured target).
+        expr: jan_drishti_cluster_p95_ms > 250
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Fleet p95 latency above the 250 ms target"
+          description: "Autoscaler already recommends more replicas (jan_drishti_autoscale_desired_nodes). Check the dashboard recommendation."
+
+      - alert: ScaleOutRecommended
+        expr: jan_drishti_autoscale_desired_nodes > jan_drishti_cluster_nodes
+        for: 2m
+        labels:
+          severity: info
+        annotations:
+          summary: "Autoscaler recommends {{ $value }} replicas"
+          description: "Measured load exceeds the per-replica capacity target."
+
+      - alert: ScaleInOpportunity
+        expr: jan_drishti_autoscale_desired_nodes < jan_drishti_cluster_nodes
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: "Spare capacity: the autoscaler recommends fewer replicas"
+
+  - name: jan_drishti_traffic_control
+    rules:
+      - alert: HeavyThrottling
+        expr: sum(rate(jan_drishti_rate_limited_total[5m])) > 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Sustained rate limiting (>5 req/s being rejected with 429)"
+          description: |
+            Either a client is misbehaving (check X-Forwarded-For in the access
+            log and the audit trail) or legitimate load outgrew the policy -
+            raise the limit from the dashboard or scale out.
+
+      - alert: LoadShedding
+        expr: increase(jan_drishti_shed_total[5m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "Requests were shed with HTTP 503 - the cluster is at capacity"
+          description: "Scale out immediately; users are seeing failures."
+
+      - alert: ServerErrors
+        expr: sum(rate(jan_drishti_server_errors_total[5m])) > 0.2
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elevated 5xx rate on the analysis API"
+
+      - alert: CacheHitRatioLow
+        expr: |
+          sum(rate(jan_drishti_cache_hits_total[10m]))
+            / clamp_min(sum(rate(jan_drishti_cache_hits_total[10m])) + sum(rate(jan_drishti_cache_misses_total[10m])), 0.001) < 0.5
+        for: 15m
+        labels:
+          severity: info
+        annotations:
+          summary: "Static asset cache hit ratio below 50%"
+          description: "Check the edge proxy cache (nginx proxy_cache / httpd mod_cache / IIS output caching) is enabled."

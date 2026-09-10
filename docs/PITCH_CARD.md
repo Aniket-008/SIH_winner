@@ -82,7 +82,22 @@
    - Open transparency page
    - Shows: Complete formula, thresholds, examples
 
-**Result:** Judges see a working, production-ready system that solves real problems.
+6. **Scalability & Traffic Control** (60 seconds) - *the "can it actually run the
+   state?" question, answered live*
+   - The fleet view shows 3 replicas behind a load balancer, all healthy, with
+     traffic share split evenly (33% / 33% / 33%)
+   - Click **Hackathon demo -> District pilot -> State scale** to change the
+     traffic policy live; the audit log records each change
+   - Click **Run load test** (capacity mode): the dashboard fills with real
+     requests/second and p95 latency, and the autoscaler recommendation appears
+   - Switch to **verify rate limiting** mode and run it again: the 429 counter
+     rises and the result says `throttling_verified: true`
+   - One line to say: *"Nginx, Apache or IIS in front, N replicas behind, and the
+     app protects itself with per-client rate limits and load shedding - plus a
+     Prometheus endpoint for the state's NOC."*
+
+**Result:** Judges see a working, production-ready system that solves real
+problems - and that they can picture running at state scale tomorrow.
 
 ---
 
@@ -129,6 +144,14 @@
 - **Modular design** - easy to extend
 - **Real ML upgrade path** - findings become features
 - **Production-ready** - authentication, database, audit logs
+- **Horizontally scalable** - N stateless replicas, no sticky sessions
+  (identical signing key), health probes the balancer can act on, and a fleet
+  view any replica can render
+- **Traffic control built in** - per-client token bucket (429 + Retry-After),
+  concurrency guard with load shedding (503), all live-tunable and audited;
+  mirrored in the Nginx / Apache / IIS configs
+- **Observable** - Prometheus metrics per replica, alert rules, in-app ops log,
+  and a measured 2,900 req/s per replica on this machine
 
 ### Data Handling
 - **Messy data resilient** - handles 50+ column variations

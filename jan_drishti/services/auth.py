@@ -46,10 +46,30 @@ class AuthManager:
     """Manages user authentication and session tokens."""
     
     def __init__(self, secret_key: Optional[str] = None):
-        """Initialize auth manager with secret key for JWT-style tokens."""
-        self.secret_key = secret_key or os.getenv("JAN_DRISHTI_SECRET_KEY") or self._generate_secret_key()
+        """Initialize auth manager with secret key for JWT-style tokens.
+
+        Horizontal scaling note: every replica must sign tokens with the *same*
+        key, otherwise a session created by one replica is rejected by the next
+        one the load balancer picks. Resolution order:
+
+        1. explicit ``secret_key`` argument,
+        2. ``JAN_DRISHTI_SECRET_KEY`` (set this from a secret manager in production),
+        3. a key derived from the shared ``JAN_DRISHTI_CLUSTER_TOKEN``, so a
+           multi-replica demo works out of the box without sticky sessions,
+        4. a random per-process key (single-node mode).
+        """
+        self.derived_cluster_key = False
+        resolved = secret_key or os.getenv("JAN_DRISHTI_SECRET_KEY")
+        if not resolved:
+            cluster_token = os.getenv("JAN_DRISHTI_CLUSTER_TOKEN", "").strip()
+            if cluster_token:
+                resolved = hashlib.sha256(
+                    f"jan-drishti-cluster-signing-key:{cluster_token}".encode("utf-8")
+                ).hexdigest()
+                self.derived_cluster_key = True
+        self.secret_key = resolved or self._generate_secret_key()
         self.token_expiry_hours = 8  # Session expires after 8 hours
-        
+    
     def _generate_secret_key(self) -> str:
         """Generate a random secret key for signing tokens."""
         return secrets.token_hex(32)

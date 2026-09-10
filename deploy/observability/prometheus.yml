@@ -1,0 +1,44 @@
+# =============================================================================
+#  Prometheus scrape config for JAN-DRISHTI AI
+#  Every replica exposes /api/metrics (Prometheus text format, no exporter
+#  needed) with throughput, in-flight requests, latency quantiles, throttling,
+#  shedding, cache hit ratio and the autoscaler's recommended replica count.
+#
+#  Usage:
+#     prometheus --config.file=deploy/observability/prometheus.yml
+#     docker compose -f deploy/docker-compose.scale.yml up   (starts this too)
+#
+#  In Grafana (http://localhost:3000, admin/jandrishti) add a Prometheus data
+#  source pointing at http://prometheus:9090 and graph, for example:
+#     sum(rate(jan_drishti_requests_total[1m])) by (node)        # per-replica RPS
+#     max(jan_drishti_cluster_p95_ms)                            # fleet p95 latency
+#     sum(rate(jan_drishti_rate_limited_total[5m])) by (node)    # throttling
+#     max(jan_drishti_autoscale_desired_nodes)                   # scale target
+# =============================================================================
+global:
+  scrape_interval: 5s
+  evaluation_interval: 15s
+  external_labels:
+    deployment: jan-drishti-scale
+
+rule_files:
+  - alerts.yml
+
+scrape_configs:
+  - job_name: jan_drishti_replicas
+    metrics_path: /api/metrics
+    static_configs:
+      - targets:
+          - app1:8000
+          - app2:8000
+          - app3:8000
+          - app4:8000
+        labels:
+          tier: app-replica
+      # Single-box deployment: run scripts/start_cluster.py and use
+      #   - targets: ["127.0.0.1:8000", "127.0.0.1:8001", "127.0.0.1:8002"]
+
+  # Optional: node-exporter for host CPU/memory next to the app metrics.
+  # - job_name: node
+  #   static_configs:
+  #     - targets: ["node-exporter:9100"]

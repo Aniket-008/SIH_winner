@@ -77,6 +77,7 @@
           </div>
           <div class="nav-links">
             <a class="ghost-link" href="#upload-panel" id="navUpload">Upload</a>
+            <a class="ghost-link" href="#scalability" id="navScalability">Scalability</a>
             <a class="ghost-link" href="#transparency" id="navTransparency">Model Transparency</a>
             <a class="ghost-link" href="#audit-log" id="navAudit">Audit Log</a>
             <div id="userDisplay" class="user-display">
@@ -124,6 +125,7 @@
         </div>
         <div class="nav-links">
           <a class="nav-link" href="#upload-panel">Upload</a>
+          <a class="nav-link" href="#scalability" id="navScalability2">Scalability</a>
           <a class="nav-link" href="#transparency">Model Transparency</a>
           <a class="nav-link" href="#audit-log">Audit Log</a>
           <div id="userDisplay2" class="user-display">
@@ -217,6 +219,252 @@
           </article>
         </section>
 
+        <!-- Scalability & Traffic Control Section -->
+        <section id="scalability" class="panel scalability-panel">
+          <div class="section-heading scalability-heading">
+            <div>
+              <p class="eyebrow">Scalability &amp; traffic control</p>
+              <h2>Horizontal scaling, load balancing and live traffic control</h2>
+              <p>
+                Live telemetry from every app replica behind the Nginx / Apache / IIS edge tier:
+                throughput, p95 latency, saturation, throttled requests, cache hit ratio and the
+                autoscaler recommendation. Nothing on this page is faked - the numbers come from
+                the real request path of each node via <code>/api/scalability</code>.
+              </p>
+            </div>
+            <div class="scal-controls">
+              <span id="scalLiveDot" class="live-dot" title="Auto-refresh status">●</span>
+              <span id="scalUpdated" class="scal-updated">Waiting for first sample…</span>
+              <label class="switch-label">
+                <input id="scalAutoRefresh" type="checkbox" checked />
+                Auto-refresh (3s)
+              </label>
+              <button id="scalRefreshBtn" class="secondary-button small-button" type="button">Refresh now</button>
+            </div>
+          </div>
+
+          <div id="scalSummary" class="summary-grid scalability-summary" aria-label="Scalability summary"></div>
+
+          <div id="scalBanner" class="scal-banner" hidden></div>
+
+          <div class="dashboard-grid scalability-grid">
+            <article class="panel node-panel">
+              <div class="panel-title-row">
+                <h3>Load balancer &amp; replicas</h3>
+                <span id="scalLbBadge" class="badge scale-badge">round robin</span>
+              </div>
+              <p id="scalTopologyText" class="panel-note">Detecting edge tier…</p>
+              <div class="table-wrap">
+                <table class="scal-table">
+                  <thead>
+                    <tr>
+                      <th>Replica</th>
+                      <th>Status</th>
+                      <th>Traffic share</th>
+                      <th>Req/s</th>
+                      <th>p95</th>
+                      <th>In-flight</th>
+                      <th>Uptime</th>
+                    </tr>
+                  </thead>
+                  <tbody id="scalNodes"></tbody>
+                </table>
+              </div>
+              <p class="panel-note">
+                Each replica answers <code>/health</code> for the balancer's health check and
+                <code>/api/cluster/self</code> for this fleet view (cluster-token protected).
+              </p>
+            </article>
+
+            <article class="panel chart-panel">
+              <div class="panel-title-row">
+                <h3>Fleet traffic (last 60s)</h3>
+                <span class="badge scale-badge">req/s · p95 · throttled</span>
+              </div>
+              <canvas id="scalChart" class="scal-chart" width="720" height="260" aria-label="Fleet throughput chart"></canvas>
+              <div id="scalChartLegend" class="scal-legend"></div>
+              <div id="scalRecommendation" class="recommendation-card">Waiting for samples…</div>
+            </article>
+          </div>
+
+          <div class="dashboard-grid scalability-grid">
+            <article class="panel control-panel">
+              <div class="panel-title-row">
+                <h3>Traffic control policy</h3>
+                <span id="policyRoleBadge" class="badge scale-badge">read-only</span>
+              </div>
+              <p class="panel-note">
+                Changes apply instantly on this replica and are written to the audit trail.
+                The same knobs are what the edge tier enforces in the
+                <code>limit_req</code> / <code>mod_qos</code> / IIS rate-limit rules.
+              </p>
+
+              <div class="preset-row">
+                <button class="chip-button" data-preset="demo" type="button">Hackathon demo</button>
+                <button class="chip-button" data-preset="district" type="button">District pilot</button>
+                <button class="chip-button" data-preset="state" type="button">State scale</button>
+                <button class="chip-button" data-preset="lockdown" type="button">Under attack</button>
+              </div>
+
+              <div class="control-grid">
+                <label class="control-field">
+                  <span>Per-client rate limit (req/s)</span>
+                  <input id="policyRps" type="number" min="0.5" max="20000" step="0.5" />
+                </label>
+                <label class="control-field">
+                  <span>Burst allowance</span>
+                  <input id="policyBurst" type="number" min="1" max="100000" step="1" />
+                </label>
+                <label class="control-field">
+                  <span>Max concurrent requests (load shedding)</span>
+                  <input id="policyMaxConcurrent" type="number" min="1" max="4096" step="1" />
+                </label>
+                <label class="control-field">
+                  <span>Balancer algorithm</span>
+                  <select id="policyLbAlgorithm">
+                    <option value="round_robin">Round robin</option>
+                    <option value="least_conn">Least connections</option>
+                    <option value="ip_hash">IP hash (sticky)</option>
+                    <option value="weighted">Weighted</option>
+                  </select>
+                </label>
+                <label class="control-field">
+                  <span>Autoscale target p95 (ms)</span>
+                  <input id="policyTargetP95" type="number" min="10" max="10000" step="10" />
+                </label>
+                <label class="control-field">
+                  <span>Req/s per replica before scale-out</span>
+                  <input id="policyRpsPerNode" type="number" min="1" max="100000" step="1" />
+                </label>
+                <label class="control-field">
+                  <span>Min replicas</span>
+                  <input id="policyMinNodes" type="number" min="1" max="512" step="1" />
+                </label>
+                <label class="control-field">
+                  <span>Max replicas</span>
+                  <input id="policyMaxNodes" type="number" min="1" max="512" step="1" />
+                </label>
+              </div>
+
+              <div class="toggle-row">
+                <label class="switch-label"><input id="policyRateEnabled" type="checkbox" /> Rate limiting (HTTP 429)</label>
+                <label class="switch-label"><input id="policyShed" type="checkbox" /> Load shedding (HTTP 503)</label>
+                <label class="switch-label"><input id="policyAutoscale" type="checkbox" /> Autoscaler recommendations</label>
+              </div>
+
+              <div class="upload-actions">
+                <button id="applyPolicyBtn" class="primary-button" type="button">Apply traffic policy</button>
+                <button id="flushCacheBtn" class="secondary-button" type="button">Flush asset cache</button>
+                <button id="resetMetricsBtn" class="secondary-button" type="button">Reset counters</button>
+              </div>
+              <p id="policyFeedback" class="panel-note" hidden></p>
+            </article>
+
+            <article class="panel loadtest-panel">
+              <div class="panel-title-row">
+                <h3>Load test the cluster</h3>
+                <span class="badge scale-badge">real requests</span>
+              </div>
+              <p class="panel-note">
+                Drives real HTTP traffic at every replica from inside the app so you can watch the
+                dashboard react. For an external benchmark use <code>scripts/load_test.py</code>,
+                <code>ab</code> or <code>k6</code>.
+              </p>
+
+              <div class="control-grid compact">
+                <label class="control-field">
+                  <span>Scope</span>
+                  <select id="ltScope">
+                    <option value="cluster">Whole cluster</option>
+                    <option value="single">This replica only</option>
+                  </select>
+                </label>
+                <label class="control-field">
+                  <span>Mode</span>
+                  <select id="ltMode">
+                    <option value="capacity">Measure capacity (limiter paused)</option>
+                    <option value="throttle">Verify rate limiting (429 expected)</option>
+                  </select>
+                </label>
+                <label class="control-field">
+                  <span>Virtual users</span>
+                  <input id="ltConcurrency" type="number" min="1" max="64" value="12" />
+                </label>
+                <label class="control-field">
+                  <span>Duration (s)</span>
+                  <input id="ltDuration" type="number" min="1" max="30" value="8" />
+                </label>
+                <label class="control-field wide">
+                  <span>Target path</span>
+                  <select id="ltPath">
+                    <option value="/api/scalability">/api/scalability (dashboard data)</option>
+                    <option value="/health">/health (load balancer probe)</option>
+                    <option value="/api/model-transparency">/api/model-transparency</option>
+                    <option value="/">/ (static website)</option>
+                  </select>
+                </label>
+              </div>
+
+              <div class="upload-actions">
+                <button id="runLoadTestBtn" class="primary-button" type="button">Run load test</button>
+              </div>
+              <div id="ltResult" class="loadtest-result" hidden></div>
+            </article>
+          </div>
+
+          <div class="dashboard-grid scalability-grid wide-left">
+            <article class="panel">
+              <div class="panel-title-row">
+                <h3>Live request feed</h3>
+                <span id="scalFeedMeta" class="badge scale-badge">-</span>
+              </div>
+              <div class="table-wrap">
+                <table class="scal-table">
+                  <thead>
+                    <tr><th>Time</th><th>Method</th><th>Path</th><th>Status</th><th>Latency</th><th>Node</th><th>Decision</th><th>Client</th></tr>
+                  </thead>
+                  <tbody id="scalRequests"></tbody>
+                </table>
+              </div>
+            </article>
+
+            <article class="panel">
+              <div class="panel-title-row">
+                <h3>Scaling &amp; traffic events</h3>
+                <span class="badge scale-badge">ops log</span>
+              </div>
+              <div id="scalEvents" class="event-list"></div>
+            </article>
+          </div>
+
+          <article class="panel">
+            <div class="panel-title-row">
+              <h3>Where each control lives</h3>
+              <span class="badge scale-badge">5 layers</span>
+            </div>
+            <div class="table-wrap">
+              <table class="scal-table">
+                <thead>
+                  <tr><th>Layer</th><th>What it does</th><th>Implemented with</th><th>Status</th></tr>
+                </thead>
+                <tbody id="scalEnforcement"></tbody>
+              </table>
+            </div>
+            <details class="config-details">
+              <summary>Deployment configs included in this repo</summary>
+              <ul class="config-list">
+                <li><code>deploy/nginx/jan_drishti.conf</code> - reverse proxy, upstream pool, <code>limit_req</code>, <code>proxy_cache</code>, <code>stub_status</code></li>
+                <li><code>deploy/apache/jan_drishti.conf</code> - <code>balancer://</code> cluster, <code>mod_qos</code>/<code>mod_ratelimit</code>, <code>mod_cache</code></li>
+                <li><code>deploy/iis/web.config</code> - IIS + ARR server farm, dynamic IP restrictions, output caching, failed-request tracing</li>
+                <li><code>deploy/docker-compose.scale.yml</code> - 4 replicas + Nginx balance with one command</li>
+                <li><code>deploy/kubernetes/jan-drishti.yaml</code> - Deployment, HPA (CPU + custom req/s metric), Service, probes</li>
+                <li><code>scripts/start_cluster.py</code> / <code>.sh</code> - launch N local replicas wired to each other</li>
+                <li><code>scripts/load_test.py</code> - external load generator with a live throughput table</li>
+              </ul>
+            </details>
+          </article>
+        </section>
+
         <!-- Model Transparency Section -->
         <section id="transparency" class="panel transparency-panel">
           <div class="section-heading">
@@ -260,10 +508,11 @@
     <!-- Chatbot UI -->
     <button id="chatbotToggle" class="chatbot-toggle" aria-label="Open chatbot"></button>
     
-    <div id="chatbotBackdrop" class="chatbot-backdrop"></div>`n    <div id="chatbotWindow" class="chatbot-window">
+    <div id="chatbotBackdrop" class="chatbot-backdrop"></div>
+    <div id="chatbotWindow" class="chatbot-window">
       <div class="chatbot-header">
         <h3>JAN-DRISHTI Assistant</h3>
-        <button id="chatbotClose" aria-label="Close chatbot">�</button>
+        <button id="chatbotClose" aria-label="Close chatbot">�</button>
       </div>
       
       <div id="chatbotMessages" class="chatbot-messages">

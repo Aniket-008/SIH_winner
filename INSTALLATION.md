@@ -334,6 +334,41 @@ python migrate_database.py
 
 ## 🚀 Production Deployment
 
+### Scalable deployment (recommended for more than a handful of users)
+
+Run N stateless replicas behind Nginx, Apache httpd or Microsoft IIS. Configs,
+Kubernetes manifests and the operations dashboard are included:
+
+```bash
+# 1. start replicas (each one is the same Python app on another port)
+python scripts/start_cluster.py --nodes 4 --base-port 8001 --proxy-layer nginx
+
+# 2. put the edge tier in front of them
+sudo cp deploy/nginx/jan_drishti.conf /etc/nginx/conf.d/jan_drishti.conf
+sudo nginx -t && sudo systemctl reload nginx
+#    (Windows/IIS: deploy/iis/web.config + deploy/iis/server-farm.md)
+#    (Apache:     deploy/apache/jan_drishti.conf)
+
+# 3. or run the whole stack in containers
+docker compose -f deploy/docker-compose.scale.yml up --build
+```
+
+Key environment variables for a scaled deployment (full list in
+[docs/SCALABILITY.md](docs/SCALABILITY.md)):
+
+```bash
+JAN_DRISHTI_INSTANCE_ID=node-1                 # name shown in the dashboard
+JAN_DRISHTI_SECRET_KEY=<32+ random bytes>      # MUST be identical on every replica
+JAN_DRISHTI_CLUSTER_NODES=http://127.0.0.1:8001,http://127.0.0.1:8002
+JAN_DRISHTI_PROXY_LAYER=nginx                  # what the dashboard displays
+JAN_DRISHTI_RATE_LIMIT_RPS=25                  # per-client traffic control
+JAN_DRISHTI_MAX_CONCURRENT=64                  # load-shed ceiling
+JAN_DRISHTI_TARGET_P95_MS=250                  # autoscale latency budget
+```
+
+Open the **Scalability & traffic control** section in the website to watch the
+fleet, change traffic policy live and run a load test.
+
 ### Using Gunicorn (Linux/Mac)
 
 ```bash

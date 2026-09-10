@@ -39,6 +39,51 @@ See [SECURITY.md](docs/SECURITY.md) for complete security documentation.
 - **[Principles Summary](docs/PRINCIPLES_SUMMARY.md)** - Quick visual guide to core concepts
 - **[Project Blueprint](docs/PROJECT_BLUEPRINT.md)** - System architecture and modules
 - **[Security](docs/SECURITY.md)** - Authentication, authorization, and compliance
+- **[Scalability](docs/SCALABILITY.md)** - Horizontal scaling behind Nginx/Apache/IIS, traffic control, monitoring
+
+## 🚀 Scalable by design
+
+The prototype runs as N stateless replicas behind a real edge tier, with live
+traffic control and an operations dashboard built into the website. Nothing in
+the fraud model changes - only the delivery layer around it.
+
+```bash
+# 3 replicas on one machine, wired to each other
+python scripts/start_cluster.py --nodes 3 --base-port 8000 --proxy-layer nginx
+
+# 4 replicas + Nginx + Prometheus + Grafana
+docker compose -f deploy/docker-compose.scale.yml up --build
+```
+
+Then open the **Scalability & traffic control** section of the website:
+
+| Built-in capability | Where it comes from |
+| --- | --- |
+| Fleet view (replicas, health, traffic share, uptime) | `/api/cluster/self` on every peer |
+| Throughput, p95 latency, in-flight, saturation, 429/503 counters | measured on the live request path |
+| Rate limiting (HTTP 429 + `Retry-After`) and load shedding (HTTP 503) | token bucket + concurrency guard in `jan_drishti/services/scalability.py` |
+| Runtime policy editor + 4 ready profiles (demo / district / state / under attack) | `POST /api/traffic-control`, audited |
+| Load-balancer view + autoscaler recommendation | `least_conn` / `bybusyness` / `LeastRequests` farm config |
+| Prometheus metrics + Grafana | `/api/metrics`, `deploy/observability/` |
+| Built-in load generator (capacity and throttle-verification modes) | `POST /api/load-test` |
+
+Edge-tier configs for all three stacks are included:
+
+| Stack | Config |
+| --- | --- |
+| Nginx | [`deploy/nginx/jan_drishti.conf`](deploy/nginx/jan_drishti.conf) (upstream pool, `limit_req`, `proxy_cache`, `stub_status`) |
+| Apache httpd | [`deploy/apache/jan_drishti.conf`](deploy/apache/jan_drishti.conf) (`balancer://`, `mod_qos`, `mod_cache`) |
+| Microsoft IIS | [`deploy/iis/web.config`](deploy/iis/web.config) + [`server-farm.md`](deploy/iis/server-farm.md) (ARR farm, dynamic IP restrictions, output caching) |
+| Kubernetes | [`deploy/kubernetes/jan-drishti.yaml`](deploy/kubernetes/jan-drishti.yaml) (StatefulSet, HPA, PDB, probes) |
+
+Measured single-replica throughput after the request-path tuning described in
+[SCALABILITY.md](docs/SCALABILITY.md): **2,900 req/s with 5.5 ms median latency**
+(32 virtual users, `scripts/load_test.py`) - up from **320 req/s at 44 ms** before
+the fix, on the same machine.
+
+To scale out: every replica is stateless, so a login on one replica is valid on
+all of them - just set the same `JAN_DRISHTI_SECRET_KEY` on every replica and
+add it to the balancer pool. No sticky sessions required.
 
 ## What is built
 
@@ -121,13 +166,29 @@ jan_drishti/
     risk_predictor.py               # Transparent risk/fraud scoring model
     explanation_engine.py           # Officer-friendly explanations/actions
     report_builder.py               # Dashboard summaries and alerts
-    auth.py                         # Authentication & authorization system
+    auth.py                         # Authentication & authorization system (shared signing key for replicas)
+    scalability.py                  # Telemetry, traffic control, cluster view, load generator
     database.py                     # Secure SQLite database with audit logging
     transparency.py                 # Model transparency documentation
 website/
-  index.html                        # UI with login, dashboard, transparency page
+  index.html                        # UI with login, dashboard, scalability + transparency pages
   styles.css                        # UI/UX design system with security features
   app.js                            # Auth, upload, API calls, dashboard rendering
+deploy/
+  nginx/jan_drishti.conf            # Reverse proxy, upstream pool, limit_req, proxy_cache
+  nginx/jan_drishti.docker.conf     # Same, for the docker-compose stack
+  apache/jan_drishti.conf           # balancer:// cluster, mod_qos, mod_cache
+  iis/web.config                    # IIS + ARR farm, dynamic IP restrictions, output caching
+  iis/server-farm.md                # PowerShell to build the ARR server farm
+  Dockerfile                        # Container image for scaled deployments
+  docker-compose.scale.yml          # 4 replicas + Nginx + Prometheus + Grafana
+  kubernetes/jan-drishti.yaml       # StatefulSet, HPA, PDB, probes, ingress
+  observability/prometheus.yml      # Scrape config (all replicas, 5s)
+  observability/alerts.yml          # ReplicaDown, saturation, throttling, scaling alerts
+scripts/
+  start_cluster.py                  # Launch N local replicas wired to each other
+  start_cluster.sh                  # Same, in bash
+  load_test.py                      # External load generator with a live table
 data/
   sample_projects.csv               # Demo dataset with realistic government projects
   jandrishti.db                     # SQLite database (created on first run)
@@ -136,6 +197,8 @@ docs/
   SECURITY.md                       # Complete security documentation
 tests/
   test_engine.py                    # Engine unit tests
+  test_scalability.py               # Traffic control, policy, telemetry + live HTTP integration tests
+  ui_smoke.mjs                      # Browser-less UI test (jsdom) for the scalability dashboard
 ```
 
 ## Run tests
@@ -214,6 +277,51 @@ curl -H "Authorization: Bearer <token>" \
   http://localhost:8000/api/audit-log?limit=50
 ```
 
+### `GET /api/scalability`
+
+Live fleet telemetry used by the Scalability dashboard (per-replica metrics,
+aggregated cluster view, caches, traffic policy, autoscaler recommendation).
+Requires `view` permission.
+
+```bash
+curl -H "Authorization: Bearer <token>" http://localhost:8000/api/scalability
+```
+
+### `GET /health` and `GET /api/metrics`
+
+Load-balancer probe and Prometheus scrape endpoint (no authentication, restrict
+at the edge). `/health` returns `503` when the replica is saturated or erroring
+so the balancer can drain it.
+
+```bash
+curl http://localhost:8000/health
+curl http://localhost:8000/api/metrics | head
+```
+
+### `POST /api/traffic-control`
+
+Change rate limits, concurrency ceiling, balancer algorithm or autoscale policy
+at runtime (admin only). Applied immediately and written to the audit trail.
+
+```bash
+curl -X POST http://localhost:8000/api/traffic-control \
+  -H "Authorization: Bearer <token>" -H 'Content-Type: application/json' \
+  -d '{"rate_limit_rps":150,"max_concurrent":160}'
+```
+
+### `POST /api/load-test`
+
+Run the built-in load generator against this replica or the whole fleet
+(admin only). `mode=capacity` pauses the in-app limiter for loopback so you
+measure the engine; `mode=throttle` keeps it armed so you can verify the 429
+path.
+
+```bash
+curl -X POST http://localhost:8000/api/load-test \
+  -H "Authorization: Bearer <token>" -H 'Content-Type: application/json' \
+  -d '{"scope":"cluster","mode":"capacity","duration_seconds":8,"concurrency":16}'
+```
+
 ### `GET /api/analysis-history`
 
 Get analysis history for current user (or all if admin).
@@ -227,6 +335,9 @@ curl -H "Authorization: Bearer <token>" \
 
 Because every feature lives in its own file, future upgrades are straightforward:
 
+- Scale out: add replicas to the balancer pool and to `JAN_DRISHTI_CLUSTER_NODES`
+  (see [docs/SCALABILITY.md](docs/SCALABILITY.md)); swap the in-process caches for
+  Redis and SQLite for PostgreSQL when the fleet grows.
 - Add PDF/XLSX parsing inside `services/ingestion.py`.
 - Replace or enhance rules with ML models inside `services/risk_predictor.py`.
 - Add geospatial clustering in `services/anomaly_detector.py`.

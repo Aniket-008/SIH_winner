@@ -22,3 +22,7 @@ venv/
 # Generated reports/uploads
 reports/
 uploads/
+
+# Runtime cluster helpers
+logs/
+*.pid
