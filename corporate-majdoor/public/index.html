@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="majdoor">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>Corporate Majdoor | 9 to 5 Indian Corporate Workspace Radio</title>
+<meta name="description" content="Corporate Majdoor is a free 9-to-5 Indian office radio: chill 2000s Bollywood lo-fi, live chat, boss ki daant alerts, meeting doodles and a panic-mode fake work IDE. No login, no subscription." />
+<meta name="theme-color" content="#0b0f1a" />
+<meta property="og:title" content="Corporate Majdoor — 9 to 5 Indian Office Radio" />
+<meta property="og:description" content="Bollywood lo-fi for deep work, chai breaks and unpaid overtime. Live chat, boss alerts, meeting doodles." />
+<meta property="og:type" content="website" />
+<meta property="og:image" content="img/corporate-desktop.jpg" />
+<link rel="icon" href="img/favicon.svg" type="image/svg+xml" />
+<link rel="preload" as="image" href="img/corporate-desktop.jpg" />
+<link rel="preconnect" href="https://www.youtube.com" />
+<link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+<!-- ══════════ ambient layers ══════════ -->
+<div class="stage-bg" aria-hidden="true">
+  <img src="img/corporate-desktop.jpg" alt="" class="stage-bg__img" id="stageImage" />
+  <div class="stage-bg__grade"></div>
+  <div class="stage-bg__scan"></div>
+  <canvas id="rainCanvas" class="stage-bg__rain"></canvas>
+</div>
+<div class="chai-steam" id="chaiSteam" aria-hidden="true"><span>💨</span><span>💨</span><span>💨</span></div>
+
+<!-- ══════════ top bar ══════════ -->
+<header class="topbar">
+  <a class="brand" href="#stage">
+    <span class="brand__mark">CM</span>
+    <span class="brand__text">
+      <strong>Corporate Majdoor</strong>
+      <small id="shiftLabel">Loading shift…</small>
+    </span>
+  </a>
+
+  <div class="topbar__right">
+    <div class="pill pill--live" title="People listening right now">
+      <span class="dot"></span><span id="listenerCount">0</span> online
+    </div>
+    <label class="theme-switch">
+      <span class="sr-only">Theme</span>
+      <select id="themeSelect" aria-label="Choose theme">
+        <option value="majdoor">🏢 Corporate Majdoor</option>
+        <option value="saloon">💈 Deluxe Saloon</option>
+        <option value="overtime">🌙 Midnight Overtime</option>
+        <option value="tapri">🫖 Tapri Sunset</option>
+      </select>
+    </label>
+    <button class="btn btn--ghost" id="supportBtn" type="button">❤️ Support</button>
+  </div>
+</header>
+
+<main>
+  <!-- ══════════ hero / stage ══════════ -->
+  <section class="stage" id="stage">
+    <div class="stage__inner">
+      <p class="eyebrow">Ambient work radio • Made in India</p>
+      <h1 class="title">Corporate <span>Majdoor</span></h1>
+      <p class="subtitle">9 to 5 ki Majdoori • Overtime Playlist</p>
+
+      <div class="actions" id="actionBar">
+        <button class="btn btn--chip" data-action="chat" type="button">💬 Live Chat <b class="badge" id="chatBadge">0</b></button>
+        <button class="btn btn--chip" data-action="boss" type="button">🤬 Boss Ki Daant</button>
+        <button class="btn btn--chip" data-action="notes" type="button">📝 Meeting Notes</button>
+        <button class="btn btn--chip btn--danger" data-action="fakework" type="button">🚨 Boss Aaya! (Fake Work)</button>
+        <button class="btn btn--chip" data-action="share" type="button">🔗 Share</button>
+      </div>
+
+      <!-- player dock -->
+      <div class="player" id="player">
+        <div class="player__meta">
+          <div class="vinyl" id="vinyl" aria-hidden="true"><span>♫</span></div>
+          <div class="player__text">
+            <div class="player__title" id="trackTitle">Connecting to the overtime playlist…</div>
+            <div class="player__sub">
+              <span id="trackArtist">—</span>
+              <span class="sep">•</span>
+              <span class="credits">Credits: <b id="trackCredits">YouTube</b></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="player__seek">
+          <span class="time" id="timeNow">0:00</span>
+          <div class="seek" id="seek" role="slider" tabindex="0" aria-label="Seek" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+            <div class="seek__buffer"></div>
+            <div class="seek__fill" id="seekFill"></div>
+            <div class="seek__knob" id="seekKnob"></div>
+          </div>
+          <span class="time" id="timeTotal">0:00</span>
+        </div>
+
+        <div class="player__controls">
+          <button class="icon-btn" id="prevBtn" title="Previous (←)" type="button">⏮</button>
+          <button class="icon-btn icon-btn--play" id="playBtn" title="Play / Pause (Space)" type="button">▶</button>
+          <button class="icon-btn" id="nextBtn" title="Next (→)" type="button">⏭</button>
+          <button class="icon-btn" id="shuffleBtn" title="Shuffle" type="button">🔀</button>
+          <div class="volume">
+            <button class="icon-btn" id="muteBtn" title="Mute (M)" type="button">🔊</button>
+            <input id="volume" type="range" min="0" max="100" value="65" aria-label="Volume" />
+          </div>
+          <button class="icon-btn icon-btn--wide" id="ambienceBtn" title="Office ambience: rain, keyboard clicks, fan" type="button">🌧 Ambience</button>
+          <button class="icon-btn icon-btn--wide" id="playlistBtn" title="Open playlist" type="button">📻 Playlist</button>
+        </div>
+      </div>
+
+      <a class="scroll-hint" href="#about">Scroll <span>⌄</span></a>
+    </div>
+
+    <!-- playlist popover -->
+    <aside class="playlist" id="playlistPanel" hidden>
+      <header>
+        <b>Overtime Playlist</b>
+        <button class="icon-btn" data-close="playlist" type="button">✕</button>
+      </header>
+      <ul id="playlistItems"></ul>
+      <footer>Streams official uploads via YouTube. Credits shown per track.</footer>
+    </aside>
+  </section>
+
+  <!-- ══════════ about ══════════ -->
+  <section class="section" id="about">
+    <p class="section__kicker">Welcome to</p>
+    <h2 class="section__title">Corporate Majdoor — 9 to 5 Indian Office Radio</h2>
+    <p class="section__lead">
+      <b>Corporate Majdoor</b> is an ambient work radio made for every Indian engineer, manager, designer and
+      9-to-5 hustler. Inspired by the late-evening glow of Bengaluru, Gurugram, Pune, Hyderabad and Noida tech
+      park cubicles, it brings together non-stop chill 2000s Bollywood melodies, interactive meeting doodles,
+      funny boss alerts and the iconic banter of tea-break culture.
+    </p>
+
+    <div class="cards">
+      <article class="card">
+        <div class="card__icon">🎧</div>
+        <h3>Deep Work &amp; Focus Flow</h3>
+        <p>Curated Bollywood chill melodies calibrated for deep work, presentations, reports and overtime focus — plus a built-in rain + keyboard ambience mixer.</p>
+      </article>
+      <article class="card">
+        <div class="card__icon">📝</div>
+        <h3>Meeting Doodles &amp; Banter</h3>
+        <p>Relatable meeting scribbles, salary breakdowns, boss daant alerts and the classic 5 PM tapri dialogue soundboard. Draw anywhere on the desk.</p>
+      </article>
+      <article class="card">
+        <div class="card__icon">🚨</div>
+        <h3>Panic Mode Fake Work</h3>
+        <p>Boss aa gaya? One tap opens a full-screen "serious developer" IDE with live typing, Jira sprint board and a build log. Press ESC to escape.</p>
+      </article>
+      <article class="card">
+        <div class="card__icon">🏢</div>
+        <h3>100% Free &amp; No Login</h3>
+        <p>No subscription, no login, no corporate VPN block. Just open it in a browser tab and let it play all day long.</p>
+      </article>
+    </div>
+
+    <div class="stats" id="statsStrip">
+      <div><b id="statListeners">0</b><span>listening now</span></div>
+      <div><b id="statMessages">0</b><span>chat messages</span></div>
+      <div><b id="statTracks">0</b><span>tracks on rotation</span></div>
+      <div><b id="statUptime">0m</b><span>server uptime</span></div>
+    </div>
+  </section>
+
+  <!-- ══════════ faq ══════════ -->
+  <section class="section section--faq" id="faq">
+    <p class="section__kicker">FAQ</p>
+    <h2 class="section__title">Corporate Majdoor, Explained</h2>
+    <div class="faq" id="faqList">
+      <details>
+        <summary>What is Corporate Majdoor?</summary>
+        <p>Corporate Majdoor is an ambient radio experience created for Indian techies and 9-to-5 employees, featuring nostalgic Bollywood work tunes, relatable meeting doodles and funny corporate dialogues.</p>
+      </details>
+      <details>
+        <summary>Can I listen while working or coding?</summary>
+        <p>Yes! The radio is curated with relaxing, low-distraction retro Bollywood melodies that keep you focused through meetings, debugging and spreadsheet crunches. Add rain or keyboard ambience for extra flow.</p>
+      </details>
+      <details>
+        <summary>Is the live chat public?</summary>
+        <p>It is. Anyone on the site sees the room. Pick any display name, keep it friendly — abusive words are auto-masked and spam is rate-limited.</p>
+      </details>
+      <details>
+        <summary>What happens in "Boss Aaya!" mode?</summary>
+        <p>The whole screen instantly becomes a very serious looking IDE: file explorer, sprint tickets, a payment-gateway class typing itself out and a build terminal. Press <kbd>ESC</kbd> to return to the radio.</p>
+      </details>
+      <details>
+        <summary>Do you own the music?</summary>
+        <p>No. Tracks stream from the rights-holders' official YouTube uploads through the YouTube IFrame Player API, and every track shows its credit on screen.</p>
+      </details>
+      <details>
+        <summary>How do I switch themes?</summary>
+        <p>Use the theme dropdown at the top of the screen — Corporate Majdoor, Deluxe Saloon, Midnight Overtime or Tapri Sunset. Your choice is remembered on this device.</p>
+      </details>
+    </div>
+
+    <div class="shortcuts">
+      <b>Keyboard shortcuts</b>
+      <ul>
+        <li><kbd>Space</kbd> play / pause</li>
+        <li><kbd>←</kbd> <kbd>→</kbd> prev / next track</li>
+        <li><kbd>M</kbd> mute</li>
+        <li><kbd>C</kbd> chat</li>
+        <li><kbd>B</kbd> boss ki daant</li>
+        <li><kbd>N</kbd> meeting notes</li>
+        <li><kbd>F</kbd> fake work</li>
+        <li><kbd>ESC</kbd> close everything</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <p>Made with ☕ + 😤 for the Indian 9-to-5 workforce. Not affiliated with any employer, thankfully.</p>
+    <p class="footer__links">
+      <a href="#about">About</a><a href="#faq">FAQ</a>
+      <a href="#" id="footerSupport">Support</a><a href="#" id="footerShare">Share</a>
+    </p>
+  </footer>
+</main>
+
+<!-- ══════════ live chat drawer ══════════ -->
+<aside class="drawer" id="chatDrawer" aria-hidden="true">
+  <header class="drawer__head">
+    <div>
+      <b>Live Chat</b>
+      <small id="chatPresence">connecting…</small>
+    </div>
+    <button class="icon-btn" data-close="chat" type="button">✕</button>
+  </header>
+  <div class="chat__list" id="chatList"></div>
+  <div class="chat__typing" id="chatTyping"></div>
+  <form class="chat__form" id="chatForm" autocomplete="off">
+    <input id="chatInput" type="text" maxlength="240" placeholder="Kuch bhi likho… (Enter to send)" aria-label="Message" />
+    <button class="btn btn--solid" type="submit">Send</button>
+  </form>
+  <p class="chat__hint">Chatting as <b id="chatWhoami">Anonymous Majdoor</b> · <button type="button" id="changeName" class="linklike">change name</button></p>
+</aside>
+
+<!-- ══════════ boss ki daant modal ══════════ -->
+<div class="modal" id="bossModal" aria-hidden="true">
+  <div class="modal__box modal__box--boss">
+    <div class="boss__ribbon">🚨 CRITICAL ESCALATION</div>
+    <button class="modal__close" data-close="boss" type="button">✕</button>
+    <div class="boss__face" id="bossFace">🤬</div>
+    <h3>MANAGER ESCALATION</h3>
+    <p class="boss__line" id="bossLine">…</p>
+    <div class="boss__reply" id="bossReply">"Working on it Sir! 🙏"</div>
+    <div class="boss__actions">
+      <button class="btn btn--solid" id="nextDaant" type="button">Next Daant ⚡</button>
+      <button class="btn btn--ghost" id="bossSorry" type="button">🙏 Sorry Sir</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ meeting notes overlay ══════════ -->
+<div class="notes" id="notesOverlay" aria-hidden="true">
+  <canvas id="doodleCanvas"></canvas>
+  <div class="notes__bar">
+    <b>Meeting Notes ✍️</b>
+    <span class="notes__hint">Scribble freely anywhere on the desk • Click stickies to edit • Drag to move</span>
+    <span class="spacer"></span>
+    <div class="swatches" id="swatches"></div>
+    <button class="btn btn--chip" id="addSticky" type="button">➕ Sticky</button>
+    <button class="btn btn--chip" id="eraseDoodle" type="button">🧽 Clear ink</button>
+    <button class="btn btn--chip" id="resetNotes" type="button">♻️ Reset all</button>
+    <button class="btn btn--danger" data-close="notes" type="button">✕ Close</button>
+  </div>
+  <div class="notes__layer" id="stickyLayer"></div>
+</div>
+
+<!-- ══════════ fake work IDE ══════════ -->
+<div class="ide" id="ideOverlay" aria-hidden="true">
+  <div class="ide__titlebar">
+    <span class="ide__dots"><i></i><i></i><i></i></span>
+    <span class="ide__file" id="ideFile">PaymentGatewayService.java — CorporateCoreEngine</span>
+    <span class="ide__status">● BUILD PASSING (<span id="ideCoverage">98.4</span>%)</span>
+    <button class="btn btn--chip" data-close="ide" type="button">Exit Work (ESC)</button>
+  </div>
+  <div class="ide__body">
+    <aside class="ide__side">
+      <div class="ide__side-title">EXPLORER</div>
+      <ul class="ide__tree">
+        <li>📁 src/main/java</li>
+        <li class="is-active">📄 PaymentGatewayService.java</li>
+        <li>📄 CorporateRevenueEngine.java</li>
+        <li>📄 ClientEscalationHandler.java</li>
+        <li>📄 AppraisalDenialStrategy.java</li>
+        <li>📄 OvertimeCalculations.kt</li>
+      </ul>
+      <div class="ide__side-title">JIRA SPRINT</div>
+      <ul class="ide__jira" id="ideJira"></ul>
+    </aside>
+    <div class="ide__editor">
+      <pre class="ide__code"><code id="ideCode"></code><span class="ide__caret"></span></pre>
+      <div class="ide__terminal" id="ideTerminal"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ support modal ══════════ -->
+<div class="modal" id="supportModal" aria-hidden="true">
+  <div class="modal__box">
+    <button class="modal__close" data-close="support" type="button">✕</button>
+    <div class="support__heart">❤️</div>
+    <h3>Support the Platform to Stay Free FOREVER</h3>
+    <p>Thousands of majdoors stream this radio daily and server costs are real. Send any amount you wish — chai ke paise bhi chalega. Thank you in advance ❤️</p>
+    <img class="support__qr" id="supportQr" src="img/qr.png" alt="UPI QR code to support Corporate Majdoor" />
+    <p class="support__upi">UPI: <b id="upiId">corporatemajdoor@upi</b> <button class="linklike" id="copyUpi" type="button">copy</button></p>
+    <div class="support__actions">
+      <a class="btn btn--solid" href="img/qr.png" download>Download QR</a>
+      <button class="btn btn--ghost" data-close="support" type="button">Dismiss</button>
+    </div>
+    <small>Save it and scan with any UPI app.</small>
+  </div>
+</div>
+
+<!-- ══════════ name prompt ══════════ -->
+<div class="modal" id="nameModal" aria-hidden="true">
+  <div class="modal__box modal__box--slim">
+    <button class="modal__close" data-close="name" type="button">✕</button>
+    <h3>One last step — what's your name?</h3>
+    <p class="muted" id="namePreview">We'll send this as soon as you enter it.</p>
+    <form id="nameForm" autocomplete="off">
+      <input id="nameInput" maxlength="24" placeholder="e.g. Devashish from Indore" aria-label="Display name" />
+      <div class="support__actions">
+        <button class="btn btn--solid" type="submit">Send</button>
+        <button class="btn btn--ghost" type="button" data-close="name">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ══════════ share sheet ══════════ -->
+<div class="modal" id="shareModal" aria-hidden="true">
+  <div class="modal__box modal__box--slim">
+    <button class="modal__close" data-close="share" type="button">✕</button>
+    <h3>Share the majdoori 🔗</h3>
+    <p class="muted">Send it to the colleague who needs it most.</p>
+    <div class="share__row">
+      <input id="shareUrl" readonly aria-label="Share link" />
+      <button class="btn btn--solid" id="copyLink" type="button">Copy</button>
+    </div>
+    <div class="share__grid" id="shareGrid"></div>
+  </div>
+</div>
+
+<div class="toasts" id="toasts" aria-live="polite"></div>
+<div class="alarm" id="alarmFlash" aria-hidden="true"></div>
+<div id="ytHost" class="yt-host"><div id="ytPlayer"></div></div>
+
+<script src="/socket.io/socket.io.js" defer onerror="window.__noSocket=true"></script>
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

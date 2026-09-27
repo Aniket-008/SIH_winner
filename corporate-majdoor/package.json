@@ -1,0 +1,32 @@
+{
+  "name": "corporate-majdoor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Corporate Majdoor - a 9 to 5 Indian office lo-fi radio: Bollywood chill playlist, live chat, boss daant alerts, meeting doodles and panic-mode fake work IDE.",
+  "type": "module",
+  "main": "server/index.js",
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test tests/*.test.js"
+  },
+  "keywords": [
+    "lofi",
+    "radio",
+    "bollywood",
+    "corporate",
+    "india",
+    "socket.io"
+  ],
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.19.2",
+    "socket.io": "^4.7.5"
+  },
+  "devDependencies": {
+    "socket.io-client": "^4.8.4"
+  }
+}
